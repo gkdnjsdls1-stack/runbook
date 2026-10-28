@@ -183,6 +183,8 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
 .crew .acts button[aria-pressed="true"]{border-color:var(--fr)}
 .crew .acts .poke{font-size:13px;font-weight:700;background:var(--fr-soft);color:var(--fr)}
 .crew .acts .poke:disabled{opacity:.55}
+.crew .acts .kick{margin-left:auto;font-size:12px;color:var(--muted);background:none;border:1px solid var(--line)}
+.crew .acts .kick.arm{background:var(--low);border-color:var(--low);color:#fff;font-weight:700}
 .crew li.me{background:var(--me-soft);border-radius:12px;padding-left:6px;padding-right:6px;border-top-color:transparent}
 .join{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));overflow:auto}
 .join-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px 20px;display:flex;flex-direction:column;gap:10px}
@@ -447,7 +449,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     return {region, name:region+" · "+SUFFIX[rnd(SUFFIX.length)], len:(n-1)*5, stops};
   }
 
-  const S = { bank:null, bankReady:false, runsReady:false, crew:null, myName:"", pokes:[], pokeSent:{}, items:{}, cats:null, sel:null, db:null, user:null, uid:null, local:false, players:[], runs:[], budget:300000, spend:{}, emoji:"", poke:null, names:{}, shownMe:null, prevMeKm:null };
+  const S = { owner:null, ownerChecked:false, bank:null, bankReady:false, runsReady:false, crew:null, myName:"", pokes:[], pokeSent:{}, items:{}, cats:null, sel:null, db:null, user:null, uid:null, local:false, players:[], runs:[], budget:300000, spend:{}, emoji:"", poke:null, names:{}, shownMe:null, prevMeKm:null };
 
   // ---------- 이 브라우저용 작은 저장소 (로그인 안 됐을 때) ----------
   function LocalDB(){
@@ -661,7 +663,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
       const run=todayRun(x.id);
       li.innerHTML='<span class="rk"></span><span class="cdot"></span><span class="cn"><span></span><small></small></span><span class="ck num"></span>';
       li.querySelector(".rk").textContent=i+1; li.querySelector(".cdot").style.background=colorOf(x.id);
-      li.querySelector(".cn span").textContent = x.id===S.uid ? (nm(x.id)==="나" ? "나" : nm(x.id)+" (나)") : nm(x.id);
+      li.querySelector(".cn span").textContent = (x.id===S.owner?"👑 ":"")+(x.id===S.uid ? (nm(x.id)==="나" ? "나" : nm(x.id)+" (나)") : nm(x.id));
       li.querySelector(".cn small").textContent = run ? "오늘 "+(run.emoji?run.emoji+" ":"")+"+"+fmtKm(1+(run.bonus||0))+(Object.keys(run.reacts||{}).length?" · "+Object.values(run.reacts).join(""):"") : "오늘 아직";
       li.querySelector(".ck").textContent=fmtKm(x.km);
       if(x.id!==S.uid){
@@ -672,6 +674,11 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
         } else {
           const b=document.createElement("button"); b.className="poke"; const sent=S.pokeSent[x.id]===todayStr;
           b.textContent = sent ? "찔렀어요 👟" : "같이 뛰자 👟"; b.disabled=sent; b.addEventListener("click",()=>poke(x.id)); acts.appendChild(b);
+        }
+        if(S.owner===S.uid){
+          const k=document.createElement("button"); k.className="kick"; k.textContent="내보내기";
+          k.addEventListener("click",()=>{ if(!k.dataset.arm){ k.dataset.arm="1"; k.textContent="정말 내보내기"; k.classList.add("arm"); setTimeout(()=>{ delete k.dataset.arm; k.textContent="내보내기"; k.classList.remove("arm"); },3000); return; } kick(x.id); });
+          acts.appendChild(k);
         }
         li.appendChild(acts);
       }
@@ -854,6 +861,21 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     });
   }
   function buildReacts(){}
+  // 방장: 크루를 만든 사람 (예전 크루는 가장 먼저 들어온 사람). 방장은 다른 사람을 내보낼 수 있어요.
+  async function checkOwner(){
+    if(S.ownerChecked || !S.db.crewDoc || !S.players.length) return; S.ownerChecked=true;
+    const ref=S.db.crewDoc();
+    try{
+      const d=await ref.get();
+      if(d.exists) S.owner=d.data().owner;
+      else { const first=crew()[0]; if(first===S.uid){ await ref.set({owner:S.uid, createdAt:Date.now()}); S.owner=S.uid; } }
+    }catch(e){ console.error(e); }
+    render();
+  }
+  async function kick(id){
+    try{ await S.db.collection("players").doc(id).delete(); toast(nm(id)+" 님을 크루에서 내보냈어요"); }
+    catch(e){ console.error(e); toast("내보내지 못했어요. 보안 규칙을 새로 게시했는지 확인해 주세요"); }
+  }
   function react(id, e){
     const run=todayRun(id); if(!run) return;
     run.reacts = {...(run.reacts||{}), [S.uid]:e}; render();
@@ -938,7 +960,10 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     try{ const me = await db.collection("players").doc(S.uid).get();
       if(!me.exists) await db.collection("players").doc(S.uid).set({name:S.myName||"나", joinedAt:Date.now(), gauge:gaugeOf(myRemainRatio()).lv});
       else if(S.myName && me.data().name!==S.myName) await db.collection("players").doc(S.uid).update({name:S.myName}); }catch(e){ console.error(e); dbError(e); }
-    db.collection("players").onSnapshot(s=>{ S.players = s.docs.map(d=>({id:d.id, ...d.data()})); S.players.forEach(p=>{ if(p.name) S.names[p.id]=p.name; }); render(); }, e=>{ console.error(e); dbError(e); });
+    db.collection("players").onSnapshot(s=>{ S.players = s.docs.map(d=>({id:d.id, ...d.data()})); S.players.forEach(p=>{ if(p.name) S.names[p.id]=p.name; }); checkOwner();
+      if(S.joinedOnce && !S.players.some(p=>p.id===S.uid)){ LS.del("rb-crew"); toast("크루에서 나가졌어요"); setTimeout(()=>location.reload(),1500); }
+      if(S.players.some(p=>p.id===S.uid)) S.joinedOnce=true;
+      render(); }, e=>{ console.error(e); dbError(e); });
     db.collection("runs").where("date", ">=", ymd(RANGE.start)).onSnapshot(s=>{ S.runs = s.docs.map(d=>({...d.data(), reacts:{...((d.data()||{}).reacts||{})}})); S.runsReady=true; if(S._runsRes){ S._runsRes(); S._runsRes=null; } render(); }, e=>console.error(e));
     await Promise.race([new Promise(r=>{ S._runsRes=r; if(S.runsReady) r(); }), new Promise(r=>setTimeout(r,4000))]);
     try{ const bk = await db.collection("data/users/"+S.uid).doc("bank").get(); S.bank = bk.exists ? JSON.parse(JSON.stringify(bk.data())) : null; }catch(e){ S.bank=null; }
@@ -1030,7 +1055,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
       return { where:(f,op,v)=>col(path, filters.concat([[f,op,v]])), doc:id=>docRef(cp+"/"+id),
         get: async()=>wrapQ(await m.getDocs(q())),
         onSnapshot:(cb,err)=>m.onSnapshot(q(), s=>cb(wrapQ(s)), err) }; }
-    return {collection:col};
+    return {collection:col, crewDoc:()=>docRef("crews/"+crewCode)};
   }
   let dbErrShown=false;
   function dbError(e){
@@ -1083,6 +1108,8 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
         crewCode=j.code; myName=j.name; LS.set("rb-crew",crewCode); LS.set("rb-name",myName); LS.set("rb-ever","1");
       }
       S.db = FireDB(fsMod, fs, uid, crewCode); S.uid = uid; S.crew = crewCode; S.myName = myName; S.names[uid]=myName;
+      // 내가 이 크루에서 나가졌으면(내보내짐) 다시 참가 화면으로
+      S.kickedWatch = true;
       $("storeNote").textContent = "크루 "+crewCode+" · 금액은 나만 보여요";
     } else {
       S.db=LocalDB(); S.uid="me"; S.local=true; S.myName = myName||"나"; S.names.me=S.myName;
