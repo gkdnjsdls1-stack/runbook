@@ -279,20 +279,19 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     <p class="hint num" id="pigSub"></p>
   </section>
   <section class="card wallet">
-    <div class="pig-head"><span class="pig-ico" aria-hidden="true">🍽️</span><div><div class="hint">간식 지갑 · 진짜로 사 먹는 돈</div><div class="pig-amt num" id="walAmt">0원</div></div></div>
+    <div class="pig-head"><span class="pig-ico" aria-hidden="true">🍽️</span><div><div class="hint">간식 지갑</div><div class="pig-amt num" id="walAmt">0원</div></div></div>
     <p class="wal-can" id="walCan"></p>
     <button class="btn" id="eatBtn">간식 먹었어요</button>
     <ul class="wal-log num" id="walLog"></ul>
   </section>
   <section class="card gauge">
-    <b>체력 (이번 달 남은 돈)</b>
+    <b>체력</b>
     <div id="gaugeList" style="display:flex;flex-direction:column;gap:6px"></div>
     <p class="hint" id="gHint"></p>
   </section>
   <section class="card">
     <b>최근 7일</b>
     <div class="week num" id="week"></div>
-    <p class="hint">빼먹은 날은 그냥 쉬는 날이에요. 지난 날은 안 채워도 돼요.</p>
   </section>
   <p class="note" id="storeNote">연결 중…</p>
   </main>
@@ -690,7 +689,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     row("나", rr*100, g.c, g.t);
     oth.forEach(id=>{ const p=S.players.find(q=>q.id===id); const lv=p&&p.gauge!=null?p.gauge:3; const gg=levels[lv]; row(nm(id), gg.w, gg.c, gg.t); });
     const used = Object.values(S.spend).reduce((a,b)=>a+b,0);
-    $("gHint").textContent = "나: 대충 "+won(used)+"원 씀 / "+won(S.budget)+"원 · 하루 몫 약 "+won(Math.round(perDay()/1000)*1000)+"원"+(oth.length?" · 크루에게는 상태만 보여요":"");
+    $("gHint").textContent = won(used)+" / "+won(S.budget)+"원";
     renderBank();
     if(!S.holdAnim) checkRewards(meKm, S.shownMe!==null);
     // 최근 7일
@@ -764,12 +763,12 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     if(!S.bank){ $("miniPigText").textContent="🐷 돼지저금통 준비 중"; return; }
     const pig=pigNow(), b=S.bank, today=S.spend[todayStr];
     $("pigAmt").textContent=won(pig)+"원";
-    $("pigSub").textContent="하루 용돈 약 "+won(Math.round(perDay()/100)*100)+"원 · 덜 쓴 만큼 쌓이고, 더 쓰면 빠져요"+(b.carried?" · 지난 시즌에서 "+won(b.carried)+"원 이월":"");
+    $("pigSub").textContent = b.carried ? "이월 "+won(b.carried)+"원" : ""; $("pigSub").hidden = !b.carried;
     $("walAmt").textContent=won(b.wallet||0)+"원";
     const nx = COURSE.stops.find(s=>s[0]>kmOf(S.uid));
-    $("walCan").textContent = canEatText(b.wallet||0, null) + (nx?" · 다음 정거장 도착하면 그동안 아낀 돈의 30%가 들어와요":"");
+    const ce=canEat(b.wallet||0); $("walCan").textContent = ce ? ce[1]+" 가능" : "컵라면까지 "+won(1500-(b.wallet||0))+"원";
     const ul=$("walLog"); ul.innerHTML="";
-    (b.log||[]).slice(-5).reverse().forEach(x=>{ const li=document.createElement("li"); li.textContent = x.d.slice(5).replace("-",".")+"  "+(x.t==="+"?"+"+won(x.a)+"원 · "+x.s+" 도착":"−"+won(x.a)+"원 · "+(x.s||"간식")+" 먹음"); ul.appendChild(li); });
+    (b.log||[]).slice(-3).reverse().forEach(x=>{ const li=document.createElement("li"); li.textContent = x.d.slice(5).replace("-",".")+"  "+(x.t==="+"?"+"+won(x.a)+" "+x.s:"−"+won(x.a)+" "+(x.s||"간식")); ul.appendChild(li); });
     $("eatBtn").disabled = !(b.wallet>0);
     $("miniPigText").textContent = "🐷 "+won(pig)+"원 · 🍽️ 간식 지갑 "+won(b.wallet||0)+"원"+(today!=null?" · 오늘 "+(perDay()-today>=0?"+":"−")+won(Math.abs(Math.round((perDay()-today)/10)*10))+"원":"");
   }
