@@ -7,7 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="가계부 러닝">
 <meta name="description" content="하루 한 번 대충 얼마 썼는지 누르면 친구들과 같은 먹거리 코스를 달리는 가계부">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏃%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>가계부 러닝</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -194,6 +196,20 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
 .crew-share b{font-size:18px;letter-spacing:.12em;color:var(--track)}
 .sheet .name-in{font-size:16px;font-weight:500;text-align:left;padding:10px 12px}
 .share-link{width:100%;border:1px dashed var(--line);background:var(--bg);color:var(--muted);border-radius:10px;padding:9px 10px;font:inherit;font-size:13px!important;font-weight:400!important;text-align:left!important}
+.pig-head{display:flex;align-items:center;gap:12px}
+.pig-ico{font-size:40px;line-height:1}
+.pig-amt{font-family:var(--display);font-size:32px;line-height:1.1}
+.pig .pig-amt{color:#C2667F}
+.wallet .pig-amt{color:var(--track)}
+.wal-can{margin:0;font-size:15px;font-weight:500}
+.wal-log{list-style:none;margin:0;padding:0;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.tr-ico{font-size:64px;line-height:1.1}
+.tr-box{display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:14px;padding:12px 14px;text-align:left;font-size:14px}
+.tr-box div{display:flex;justify-content:space-between;gap:10px}
+.tr-box span{color:var(--muted)}
+.tr-box .tot{border-top:1px solid var(--line);padding-top:6px;font-size:16px}
+.tr-box .tot span{color:var(--ink);font-weight:700}
+.tr-can{margin:0;font-size:15px;font-weight:500;line-height:1.5}
 .note{font-size:12px;color:var(--muted);text-align:center;margin:0}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:35;width:100%;height:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -237,6 +253,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     </div>
   </section>
   <button class="mini" id="miniCourse"><span id="miniText">코스 보기</span><span aria-hidden="true">→</span></button>
+  <button class="mini" id="miniPig"><span id="miniPigText">🐷 돼지저금통</span><span aria-hidden="true">→</span></button>
   </main>
 
   <main class="view" id="v-course" hidden>
@@ -257,6 +274,16 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
   </main>
 
   <main class="view" id="v-log" hidden>
+  <section class="card pig">
+    <div class="pig-head"><span class="pig-ico" aria-hidden="true">🐷</span><div><div class="hint">돼지저금통</div><div class="pig-amt num" id="pigAmt">0원</div></div></div>
+    <p class="hint num" id="pigSub"></p>
+  </section>
+  <section class="card wallet">
+    <div class="pig-head"><span class="pig-ico" aria-hidden="true">🍽️</span><div><div class="hint">간식 지갑 · 진짜로 사 먹는 돈</div><div class="pig-amt num" id="walAmt">0원</div></div></div>
+    <p class="wal-can" id="walCan"></p>
+    <button class="btn" id="eatBtn">간식 먹었어요</button>
+    <ul class="wal-log num" id="walLog"></ul>
+  </section>
   <section class="card gauge">
     <b>체력 (이번 달 남은 돈)</b>
     <div id="gaugeList" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -276,6 +303,32 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
   <button data-v="course"><span class="ti">🏃</span><span>코스</span></button>
   <button data-v="log"><span class="ti">📊</span><span>기록</span></button>
 </nav>
+
+<div class="roul" id="treat" hidden role="dialog" aria-label="정거장 도착 보상">
+  <div class="roul-card">
+    <p class="season" id="trTitle">정거장 도착!</p>
+    <div class="tr-ico" id="trIco">🌽</div>
+    <div class="roul-name" id="trName">홍천 찰옥수수</div>
+    <div class="tr-box num">
+      <div><span>이번 구간에 아낀 돈</span><b id="trGain">0원</b></div>
+      <div><span id="trRateLbl">간식비 (30%)</span><b id="trAdd">+0원</b></div>
+      <div class="tot"><span>간식 지갑</span><b id="trWal">0원</b></div>
+    </div>
+    <p class="tr-can" id="trCan"></p>
+    <button class="primary" id="trOk">좋아요</button>
+  </div>
+</div>
+
+<div class="sheet" id="eatSheet" hidden role="dialog" aria-label="간식 먹었어요">
+  <div class="sheet-in">
+    <h3>간식 먹었어요 🍽️</h3>
+    <p class="hint" id="eatHint">간식 지갑에서 빼요. 오늘 쓴 돈(하루 용돈)에는 안 들어가요.</p>
+    <input id="eatWhat" maxlength="16" placeholder="뭐 먹었어요? 예: 떡볶이" class="name-in">
+    <input id="eatAmt" inputmode="numeric" placeholder="얼마 썼어요?">
+    <button class="primary" id="eatSave">지갑에서 빼기</button>
+    <button class="edit-btn" id="eatClose" style="height:40px">닫기</button>
+  </div>
+</div>
 
 <div class="roul" id="roul" hidden role="dialog" aria-label="이번 시즌 코스 뽑기">
   <div class="roul-card">
@@ -363,6 +416,19 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     "통영":[["충무김밥","🍙"],["통영 꿀빵","🍯"],["통영 굴","🦪"],["멍게비빔밥","🥗"],["우짜","🍜"],["시락국","🍲"],["도다리쑥국","🥬"],["졸복국","🐡"],["다찌 해산물","🦑"]]
   };
   const SUFFIX = ["먹방 투어","한 바퀴","맛집 런","먹부림 코스"];
+  // 정거장 음식 대략 가격 (1인분 기준, 어림값)
+  const PRICE = {"춘천 닭갈비":15000,"춘천 막국수":10000,"춘천 감자빵":4000,"홍천 찰옥수수":3000,"안흥찐빵":5000,"횡성 한우":45000,"봉평 메밀전병":5000,"대관령 황태구이":13000,"강릉 커피콩빵":5000,"초당 순두부":11000,"강릉 장칼국수":9000,"양양 송이버섯":60000,"물치항 물회":18000,"대포항 새우튀김":10000,"아바이순대":12000,"속초 닭강정":18000,"속초 씨앗호떡":2500,"속초항 홍게":40000,"오징어순대":13000,"양구 시래기":10000,"화천 산천어":15000,
+    "돼지국밥":10000,"초량 밀면":9000,"부산 어묵":3000,"남포동 씨앗호떡":2500,"자갈치 회":30000,"꼼장어구이":20000,"낙곱새":14000,"동래파전":20000,"기장 멸치쌈밥":13000,"해운대 조개구이":35000,"비빔당면":5000,"냉채족발":30000,"기장 대게":60000,
+    "콩나물국밥":8000,"피순대":12000,"전주 비빔밥":14000,"전주 물짜장":9000,"오모가리탕":15000,"한옥마을 문꼬치":5000,"바게트버거":7000,"풍년제과 초코파이":3000,"남부시장 야시장":8000,"전주 한정식":25000,
+    "고기국수":10000,"흑돼지구이":22000,"갈치조림":20000,"고등어회":25000,"해물뚝배기":15000,"보말칼국수":12000,"오메기떡":3000,"성게미역국":15000,"한라봉":3000,"우도 땅콩아이스크림":5000,"몸국":10000,"전복죽":15000,"고사리육개장":10000,"빙떡":2000,
+    "광장시장 빈대떡":6000,"광장시장 육회":17000,"마약김밥":4000,"통인시장 기름떡볶이":5000,"남대문 갈치조림":12000,"장충동 족발":35000,"망원시장 고로케":2000,"성수 베이글":5000,"을지로 평양냉면":16000,"신당동 떡볶이":12000,"노량진 회":30000,"이태원 수제버거":15000,
+    "대구 막창":15000,"납작만두":5000,"동인동 찜갈비":15000,"뭉티기":30000,"따로국밥":10000,"서문시장 칼국수":6000,"서문시장 호떡":2000,"중화비빔밥":9000,"반고개 무침회":20000,"야끼우동":9000,
+    "황남빵":1500,"찰보리빵":1500,"교리김밥":6000,"경주 쌈밥":15000,"십원빵":3000,"맷돌순두부":11000,"감포 물회":18000,"경주 한우":40000,"황리단길 디저트":7000,
+    "돌게장":15000,"여수 갓김치":10000,"서대회":15000,"장어탕":13000,"하모 샤브샤브":40000,"여수 딸기모찌":4000,"낭만포차 해물삼합":35000,"게장백반":15000,"꽃게탕":20000,
+    "차이나타운 짜장면":8000,"공갈빵":3000,"신포시장 닭강정":18000,"인천 쫄면":8000,"세숫대야냉면":10000,"연안부두 회":30000,"밴댕이회":25000,"화덕만두":3000,"강화 순무김치":8000,
+    "충무김밥":9000,"통영 꿀빵":2000,"통영 굴":15000,"멍게비빔밥":14000,"우짜":7000,"시락국":8000,"도다리쑥국":18000,"졸복국":15000,"다찌 해산물":40000};
+  const TIERS = [[1500,"🍜 컵라면"],[3000,"🍙 삼각김밥 + 음료"],[5000,"🌶️ 떡볶이"],[9000,"🍲 국밥 한 그릇"],[13000,"🌶️ 마라탕"],[20000,"🍖 고기 한 상"]];
+  const STOP_RATE = 0.3, FINISH_RATE = 0.5;
   function cycleOf(s){ const [y,m,d]=s.split("-").map(Number); return d>=START_DAY ? ym(new Date(y,m-1,1)) : ym(new Date(y,m-2,1)); }
   function cycleRange(c){ const [y,m]=c.split("-").map(Number); return {start:new Date(y,m-1,START_DAY), end:new Date(y,m,START_DAY-1)}; }
   const today = new Date(), todayStr = ymd(today);
@@ -382,7 +448,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     return {region, name:region+" · "+SUFFIX[rnd(SUFFIX.length)], len:(n-1)*5, stops};
   }
 
-  const S = { crew:null, myName:"", pokes:[], pokeSent:{}, items:{}, cats:null, sel:null, db:null, user:null, uid:null, local:false, players:[], runs:[], budget:300000, spend:{}, emoji:"", poke:null, names:{}, shownMe:null, prevMeKm:null };
+  const S = { bank:null, bankReady:false, runsReady:false, crew:null, myName:"", pokes:[], pokeSent:{}, items:{}, cats:null, sel:null, db:null, user:null, uid:null, local:false, players:[], runs:[], budget:300000, spend:{}, emoji:"", poke:null, names:{}, shownMe:null, prevMeKm:null };
 
   // ---------- 이 브라우저용 작은 저장소 (로그인 안 됐을 때) ----------
   function LocalDB(){
@@ -625,6 +691,8 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     oth.forEach(id=>{ const p=S.players.find(q=>q.id===id); const lv=p&&p.gauge!=null?p.gauge:3; const gg=levels[lv]; row(nm(id), gg.w, gg.c, gg.t); });
     const used = Object.values(S.spend).reduce((a,b)=>a+b,0);
     $("gHint").textContent = "나: 대충 "+won(used)+"원 씀 / "+won(S.budget)+"원 · 하루 몫 약 "+won(Math.round(perDay()/1000)*1000)+"원"+(oth.length?" · 크루에게는 상태만 보여요":"");
+    renderBank();
+    if(!S.holdAnim) checkRewards(meKm, S.shownMe!==null);
     // 최근 7일
     const w=$("week"); w.innerHTML='<span class="h"></span><span class="h">나</span><span class="h">'+(oth.length?"크루 ("+oth.length+"명)":"크루")+'</span>';
     for(let i=0;i<7;i++){
@@ -639,6 +707,86 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     }
   }
   const esc = s => String(s).replace(/[&<>"]/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+
+  // ---------- 돼지저금통 / 간식 지갑 ----------
+  // 저금 = 체크인한 날마다 (하루 용돈 − 그날 쓴 돈). 더 쓴 날은 빠지고, 저금통은 0원 아래로 안 내려가요.
+  const seasonSaved = () => Object.keys(S.spend).filter(d=>d>=ymd(RANGE.start)&&d<=ymd(RANGE.end)).reduce((a,d)=>a + perDay() - S.spend[d], 0);
+  function pigNow(){ const b=S.bank||{}; return Math.max(0, Math.floor(((b.carried||0) + seasonSaved() - (b.moved||0))/10)*10); }
+  const canEat = amt => { let best=null; TIERS.forEach(t=>{ if(amt>=t[0]) best=t; }); return best; };
+  function canEatText(amt, stopName){
+    const best=canEat(amt), p=stopName?PRICE[stopName]:null;
+    let t = best ? best[1]+" 먹을 수 있어요" : "아직 컵라면도 어려워요 ("+won(1500-amt)+"원 부족)";
+    if(p) t += amt>=p ? " · 🎉 "+stopName+"(약 "+won(p)+"원)도 가능!" : " · "+stopName+"(약 "+won(p)+"원)까지 "+won(p-amt)+"원";
+    return t;
+  }
+  function saveBank(){ const b=JSON.parse(JSON.stringify(S.bank)); queue(()=>S.db.collection("data/users/"+S.uid).doc("bank").set(b)); }
+  // 시즌이 바뀌면 지난 시즌 저금을 이월
+  async function openSeasonBank(){
+    const b = S.bank;
+    const passed = COURSE.stops.map((s,i)=>i).filter(i=>i>0 && COURSE.stops[i][0]<=kmOf(S.uid));
+    if(!b){ S.bank={carried:0, moved:0, wallet:0, season:SEASON, rewarded:passed, lastPig:0, log:[]}; S.bank.lastPig=pigNow(); saveBank(); return; }
+    if(b.season===SEASON) return;
+    let prevSaved=0;
+    try{ const sp=await S.db.collection("data/users/"+S.uid).doc("s-"+b.season).get();
+      if(sp.exists){ const sd=sp.data().spend||{}, r=cycleRange(b.season), days=Math.round((r.end-r.start)/86400000)+1, pd=S.budget/days;
+        prevSaved = Object.keys(sd).reduce((a,d)=>a+pd-sd[d],0); } }catch(e){}
+    b.carried = Math.max(0, Math.floor(((b.carried||0)+prevSaved-(b.moved||0))/10)*10);
+    b.moved=0; b.season=SEASON; b.rewarded=[]; b.lastPig=b.carried;
+    saveBank();
+  }
+  // 정거장 도착 → 이번 구간에 아낀 돈의 30% (결승은 이번 시즌 저금의 50%)를 간식 지갑으로
+  function checkRewards(meKm, live){
+    if(!S.bankReady || !S.bank || !S.runsReady) return;
+    const b=S.bank; b.rewarded=b.rewarded||[];
+    const due = COURSE.stops.map((s,i)=>i).filter(i=>i>0 && COURSE.stops[i][0]<=meKm && !b.rewarded.includes(i));
+    if(!due.length) return;
+    const i = due[due.length-1], stop=COURSE.stops[i], last = i===COURSE.stops.length-1;
+    const pig = pigNow(), gain = Math.max(0, pig-(b.lastPig||0));
+    let add = last ? Math.max(0, seasonSaved()*FINISH_RATE - (b.moved||0)) : gain*STOP_RATE;
+    add = Math.min(pig, Math.floor(add/10)*10);
+    b.moved=(b.moved||0)+add; b.wallet=(b.wallet||0)+add; b.lastPig=pig-add;
+    due.forEach(k=>b.rewarded.push(k));
+    b.log=(b.log||[]).concat([{d:todayStr, t:"+", a:add, s:stop[1]}]).slice(-30);
+    saveBank();
+    const show=()=>{
+      $("trTitle").textContent = last ? "🏁 결승 도착! 완주 보상" : "정거장 도착!";
+      $("trIco").textContent=stop[2]; $("trName").textContent=stop[1];
+      $("trGain").textContent = last ? won(Math.max(0,Math.floor(seasonSaved()/10)*10))+"원 (이번 시즌)" : won(gain)+"원";
+      $("trRateLbl").textContent = last ? "완주 간식비 (50%)" : "간식비 (30%)";
+      $("trAdd").textContent="+"+won(add)+"원"; $("trWal").textContent=won(b.wallet)+"원";
+      $("trCan").textContent = canEatText(b.wallet, stop[1]);
+      $("treat").hidden=false; burst(last?220:120);
+    };
+    if(live) setTimeout(show, 1500); else show();
+  }
+  $("trOk").addEventListener("click",()=>{ $("treat").hidden=true; });
+  function renderBank(){
+    if(!S.bank){ $("miniPigText").textContent="🐷 돼지저금통 준비 중"; return; }
+    const pig=pigNow(), b=S.bank, today=S.spend[todayStr];
+    $("pigAmt").textContent=won(pig)+"원";
+    $("pigSub").textContent="하루 용돈 약 "+won(Math.round(perDay()/100)*100)+"원 · 덜 쓴 만큼 쌓이고, 더 쓰면 빠져요"+(b.carried?" · 지난 시즌에서 "+won(b.carried)+"원 이월":"");
+    $("walAmt").textContent=won(b.wallet||0)+"원";
+    const nx = COURSE.stops.find(s=>s[0]>kmOf(S.uid));
+    $("walCan").textContent = canEatText(b.wallet||0, null) + (nx?" · 다음 정거장 도착하면 그동안 아낀 돈의 30%가 들어와요":"");
+    const ul=$("walLog"); ul.innerHTML="";
+    (b.log||[]).slice(-5).reverse().forEach(x=>{ const li=document.createElement("li"); li.textContent = x.d.slice(5).replace("-",".")+"  "+(x.t==="+"?"+"+won(x.a)+"원 · "+x.s+" 도착":"−"+won(x.a)+"원 · "+(x.s||"간식")+" 먹음"); ul.appendChild(li); });
+    $("eatBtn").disabled = !(b.wallet>0);
+    $("miniPigText").textContent = "🐷 "+won(pig)+"원 · 🍽️ 간식 지갑 "+won(b.wallet||0)+"원"+(today!=null?" · 오늘 "+(perDay()-today>=0?"+":"−")+won(Math.abs(Math.round((perDay()-today)/10)*10))+"원":"");
+  }
+  // 간식 먹었어요
+  const eatAmt=$("eatAmt");
+  eatAmt.addEventListener("input",()=>{ const v=eatAmt.value.replace(/[^0-9]/g,"").slice(0,7); eatAmt.value=v?won(Number(v))+"원":""; });
+  $("eatBtn").addEventListener("click",()=>{ $("eatWhat").value=""; eatAmt.value=""; $("eatHint").textContent="간식 지갑 "+won(S.bank.wallet)+"원에서 빼요. 오늘 쓴 돈(하루 용돈)에는 안 들어가요."; $("scrim").hidden=false; $("eatSheet").hidden=false; });
+  const closeEat=()=>{ $("scrim").hidden=true; $("eatSheet").hidden=true; };
+  $("eatClose").addEventListener("click",closeEat);
+  $("eatSave").addEventListener("click",()=>{
+    const v=Number(eatAmt.value.replace(/[^0-9]/g,""))||0; if(!v){ eatAmt.focus(); return; }
+    const b=S.bank, use=Math.min(v, b.wallet||0);
+    b.wallet=(b.wallet||0)-use; b.log=(b.log||[]).concat([{d:todayStr,t:"-",a:use,s:$("eatWhat").value.trim()}]).slice(-30);
+    saveBank(); closeEat(); render(); burst(60);
+    toast(v>use ? "지갑에 "+won(use)+"원밖에 없어서 그만큼만 뺐어요. 나머지는 하루 용돈에 적어주세요" : "맛있게 먹었어요! 지갑 "+won(b.wallet)+"원 남음");
+  });
+  $("miniPig").addEventListener("click",()=>showView("log"));
 
   function arrivals(from, to){
     const hit = COURSE.stops.filter(s=>s[0]>from && s[0]<=to);
@@ -742,7 +890,7 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
   $("newN").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("addCat").click(); } });
   $("openSet").addEventListener("click",()=>{ budgetIn.value=won(S.budget)+"원"; draft=S.cats.map(c=>({...c})); renderCatEdit(); $("scrim").hidden=false; $("setSheet").hidden=false; });
   const closeSet=()=>{ $("scrim").hidden=true; $("setSheet").hidden=true; };
-  $("scrim").addEventListener("click",closeSet); $("closeSet").addEventListener("click",closeSet);
+  $("scrim").addEventListener("click",()=>{ closeSet(); $("eatSheet").hidden=true; }); $("closeSet").addEventListener("click",closeSet);
   document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSet(); });
   $("editBtn").addEventListener("click",()=>{ S.editing=true; S.sel=null; paintCats(); $("amt").value=0; render(); });
   $("cancelAdd").addEventListener("click",()=>{ S.editing=false; render(); });
@@ -792,7 +940,10 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
       if(!me.exists) await db.collection("players").doc(S.uid).set({name:S.myName||"나", joinedAt:Date.now(), gauge:gaugeOf(myRemainRatio()).lv});
       else if(S.myName && me.data().name!==S.myName) await db.collection("players").doc(S.uid).update({name:S.myName}); }catch(e){ console.error(e); dbError(e); }
     db.collection("players").onSnapshot(s=>{ S.players = s.docs.map(d=>({id:d.id, ...d.data()})); S.players.forEach(p=>{ if(p.name) S.names[p.id]=p.name; }); render(); }, e=>{ console.error(e); dbError(e); });
-    db.collection("runs").where("date", ">=", ymd(RANGE.start)).onSnapshot(s=>{ S.runs = s.docs.map(d=>({...d.data(), reacts:{...((d.data()||{}).reacts||{})}})); render(); }, e=>console.error(e));
+    db.collection("runs").where("date", ">=", ymd(RANGE.start)).onSnapshot(s=>{ S.runs = s.docs.map(d=>({...d.data(), reacts:{...((d.data()||{}).reacts||{})}})); S.runsReady=true; if(S._runsRes){ S._runsRes(); S._runsRes=null; } render(); }, e=>console.error(e));
+    await Promise.race([new Promise(r=>{ S._runsRes=r; if(S.runsReady) r(); }), new Promise(r=>setTimeout(r,4000))]);
+    try{ const bk = await db.collection("data/users/"+S.uid).doc("bank").get(); S.bank = bk.exists ? JSON.parse(JSON.stringify(bk.data())) : null; }catch(e){ S.bank=null; }
+    await openSeasonBank(); S.bankReady=true; render();
     db.collection("pokes").where("to","==",S.uid).onSnapshot(s=>{ S.pokes = s.docs.map(d=>({...d.data()})); render(); }, e=>console.error(e));
   }
   // ---------- 화면 나누기 (오늘 / 코스 / 기록) ----------
