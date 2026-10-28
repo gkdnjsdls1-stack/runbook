@@ -679,6 +679,9 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
           const k=document.createElement("button"); k.className="kick"; k.textContent="내보내기";
           k.addEventListener("click",()=>{ if(!k.dataset.arm){ k.dataset.arm="1"; k.textContent="정말 내보내기"; k.classList.add("arm"); setTimeout(()=>{ delete k.dataset.arm; k.textContent="내보내기"; k.classList.remove("arm"); },3000); return; } kick(x.id); });
           acts.appendChild(k);
+          const o=document.createElement("button"); o.className="kick"; o.textContent="👑 방장 넘기기";
+          o.addEventListener("click",()=>{ if(!o.dataset.arm){ o.dataset.arm="1"; o.textContent="정말 넘기기"; o.classList.add("arm"); setTimeout(()=>{ delete o.dataset.arm; o.textContent="👑 방장 넘기기"; o.classList.remove("arm"); },3000); return; } giveOwner(x.id); });
+          acts.appendChild(o);
         }
         li.appendChild(acts);
       }
@@ -867,10 +870,14 @@ header h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:
     const ref=S.db.crewDoc();
     try{
       const d=await ref.get();
-      if(d.exists) S.owner=d.data().owner;
-      else { const first=crew()[0]; if(first===S.uid){ await ref.set({owner:S.uid, createdAt:Date.now()}); S.owner=S.uid; } }
+      if(!d.exists){ const first=crew()[0]; if(first===S.uid){ await ref.set({owner:S.uid, createdAt:Date.now()}); } }
     }catch(e){ console.error(e); }
-    render();
+    // 방장이 바뀌면 바로 반영
+    ref.onSnapshot(d=>{ S.owner = d.exists ? d.data().owner : null; render(); }, e=>console.error(e));
+  }
+  async function giveOwner(id){
+    try{ await S.db.crewDoc().update({owner:id}); toast(nm(id)+" 님이 이제 방장이에요 👑"); }
+    catch(e){ console.error(e); toast("넘기지 못했어요. 보안 규칙을 새로 게시했는지 확인해 주세요"); }
   }
   async function kick(id){
     try{ await S.db.collection("players").doc(id).delete(); toast(nm(id)+" 님을 크루에서 내보냈어요"); }
